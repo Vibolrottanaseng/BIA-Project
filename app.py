@@ -9,7 +9,7 @@ from feature_extractor import extract_features_from_list, FEATURE_COLUMNS
 
 
 st.set_page_config(
-    page_title="Phishing URL Decision Support System",
+    page_title="PhisGuard: Phishing Detection Decision Support System",
     page_icon="🛡️",
     layout="wide"
 )
