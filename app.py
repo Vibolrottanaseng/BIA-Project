@@ -149,11 +149,6 @@ def get_key_risk_factors(row):
 
 
 def show_single_result(row):
-    
-    
-    
-    
-    
     st.markdown("### Analysis Result")
 
     c1, c2, c3 = st.columns([1.4, 1.2, 1.2])
@@ -161,28 +156,133 @@ def show_single_result(row):
     with c1:
         st.markdown('<div class="card-title">URL Analysis</div>', unsafe_allow_html=True)
         st.markdown(
+        f"""
+        <div class="result-box">
+            <div><b>Prediction:</b> {row['prediction_label']}</div>
+            <div style="margin-top:10px;"><b>Phishing Probability:</b> {row['phishing_probability']:.2%}</div>
+            <div style="margin-top:10px;"><b>Source Domain:</b> {row.get('root_domain', '-') or row.get('host', '-')}</div>
+            <div style="margin-top:10px;"><b>Host:</b> {row.get('host', '-')}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    risk_level = row["risk_level"]
+    prediction_label = row["prediction_label"]
+    source_domain = row.get("root_domain", "") or row.get("host", "") or "unknown domain"
+
+    risk_styles = {
+        "High": {
+            "bg": "#fee2e2",
+            "border": "#fca5a5",
+            "text": "#b91c1c",
+            "icon": "⚠️"
+        },
+        "Medium": {
+            "bg": "#fef3c7",
+            "border": "#fcd34d",
+            "text": "#b45309",
+            "icon": "⚡"
+        },
+        "Low": {
+            "bg": "#dcfce7",
+            "border": "#86efac",
+            "text": "#15803d",
+            "icon": "✅"
+        }
+    }
+
+    style = risk_styles.get(risk_level, risk_styles["Low"])
+
+    st.markdown(
+        f"""
+        <div style="
+            display:inline-flex;
+            align-items:center;
+            gap:10px;
+            padding:12px 22px;
+            border-radius:999px;
+            background:{style['bg']};
+            color:{style['text']};
+            border:2px solid {style['border']};
+            font-weight:800;
+            font-size:20px;
+            margin:8px 0 18px 0;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+        ">
+            <span style="font-size:22px;">{style['icon']}</span>
+            <span>{risk_level} Risk</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if row["prediction"] == 0:
+        st.markdown(
             f"""
-            <div class="result-box">
-                <div><b>Prediction:</b> {row['prediction_label']}</div>
-                <div style="margin-top:10px;"><b>Phishing Probability:</b> {row['phishing_probability']:.2%}</div>
-                <div style="margin-top:10px;"><b>Source Domain:</b> {row.get('root_domain', '-') or row.get('host', '-')}</div>
-                <div style="margin-top:10px;"><b>Host:</b> {row.get('host', '-')}</div>
+            <div style="
+                background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+                border: 1.5px solid #86efac;
+                border-left: 8px solid #22c55e;
+                border-radius: 18px;
+                padding: 22px 24px;
+                margin: 6px 0 18px 0;
+                box-shadow: 0 8px 20px rgba(34,197,94,0.08);
+            ">
+                <div style="
+                    font-size:16px;
+                    font-weight:700;
+                    color:#166534;
+                    margin-bottom:8px;
+                    letter-spacing:0.2px;
+                ">
+                    Legitimate URL Detected
+                </div>
+                <div style="
+                    font-size:18px;
+                    line-height:1.6;
+                    color:#166534;
+                ">
+                    This URL is predicted as <b>{prediction_label}</b> and appears to come from
+                    <b>{source_domain}</b>.
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
-        st.markdown(risk_badge_html(row["risk_level"]), unsafe_allow_html=True)
-
-        if row["prediction"] == 0:
-            st.success(
-                f"This URL is predicted as legitimate and appears to come from: "
-                f"{row.get('root_domain', '') or row.get('host', 'unknown domain')}"
-            )
-        else:
-            st.error(
-                f"This URL is predicted as phishing. Inspect the domain carefully: "
-                f"{row.get('root_domain', '') or row.get('host', 'unknown domain')}"
-            )
+    else:
+        st.markdown(
+            f"""
+            <div style="
+                background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+                border: 1.5px solid #fca5a5;
+                border-left: 8px solid #ef4444;
+                border-radius: 18px;
+                padding: 22px 24px;
+                margin: 6px 0 18px 0;
+                box-shadow: 0 8px 20px rgba(239,68,68,0.08);
+            ">
+                <div style="
+                    font-size:16px;
+                    font-weight:700;
+                    color:#991b1b;
+                    margin-bottom:8px;
+                    letter-spacing:0.2px;
+                ">
+                    Phishing Warning
+                </div>
+                <div style="
+                    font-size:18px;
+                    line-height:1.6;
+                    color:#991b1b;
+                ">
+                    This URL is predicted as <b>{prediction_label}</b>. Inspect the source domain
+                    <b>{source_domain}</b> carefully before visiting it.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     with c2:
         gauge_chart(float(row["phishing_probability"]))
@@ -201,11 +301,10 @@ def show_single_result(row):
             )
 
     st.markdown("### Domain Information")
-    d1, d2, d3, d4 = st.columns(4)
-    d1.metric("Host", row.get("host", "-") or "-")
-    d2.metric("Root Domain", row.get("root_domain", "-") or "-")
-    d3.metric("Subdomain", row.get("subdomain", "-") or "-")
-    d4.metric("TLD", row.get("tld", "-") or "-")
+    show_domain_cards(row)
+    
+    st.markdown("### URL Indicators")
+    show_url_indicator_cards(row)
 
 
 def show_kpis(df):
@@ -656,6 +755,103 @@ def apply_custom_css():
     """, unsafe_allow_html=True)
 
 
+def show_url_indicator_cards(row):
+    def render_card(title, value, subtitle="", color="#163a63"):
+        st.markdown(
+            f"""
+            <div style="
+                background:white;
+                border:1px solid #dbe7f3;
+                border-radius:16px;
+                padding:16px 18px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+                min-height:120px;
+            ">
+                <div style="font-size:14px; color:#64748b; font-weight:600; margin-bottom:10px;">
+                    {title}
+                </div>
+                <div style="font-size:28px; font-weight:800; color:{color}; line-height:1.1;">
+                    {value}
+                </div>
+                <div style="font-size:13px; color:#64748b; margin-top:8px;">
+                    {subtitle}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        https_value = "Yes" if int(row["https_flag"]) == 1 else "No"
+        https_color = "#16a34a" if int(row["https_flag"]) == 1 else "#dc2626"
+        render_card("HTTPS", https_value, "Secure protocol detected" if https_value == "Yes" else "No HTTPS detected", https_color)
+
+    with c2:
+        ip_value = "Yes" if int(row["has_ip_address"]) == 1 else "No"
+        ip_color = "#dc2626" if int(row["has_ip_address"]) == 1 else "#16a34a"
+        render_card("IP Address", ip_value, "Uses numeric IP instead of domain" if ip_value == "Yes" else "Domain name used", ip_color)
+
+    with c3:
+        sub_count = int(row["subdomain_count"])
+        sub_color = "#f59e0b" if sub_count >= 3 else "#163a63"
+        render_card("Subdomains", str(sub_count), "High count can be suspicious" if sub_count >= 3 else "Normal range", sub_color)
+
+    with c4:
+        digit_count = int(row["number_of_digits"])
+        digit_color = "#f59e0b" if digit_count >= 8 else "#163a63"
+        render_card("Digits in URL", str(digit_count), "Many digits may be suspicious" if digit_count >= 8 else "Normal range", digit_color)
+
+def show_domain_cards(row):
+    def domain_card(title, value):
+        st.markdown(
+            f"""
+            <div style="
+                background: white;
+                border: 1px solid #dbe7f3;
+                border-radius: 16px;
+                padding: 18px 20px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+                min-height: 120px;
+            ">
+                <div style="
+                    font-size: 14px;
+                    color: #64748b;
+                    font-weight: 600;
+                    margin-bottom: 12px;
+                ">
+                    {title}
+                </div>
+                <div style="
+                    font-size: 34px;
+                    font-weight: 800;
+                    color: #1e293b;
+                    line-height: 1.1;
+                    word-break: break-word;
+                ">
+                    {value}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        domain_card("Host", row.get("host", "-") or "-")
+    with c2:
+        domain_card("Root Domain", row.get("root_domain", "-") or "-")
+    with c3:
+        domain_card("Subdomain", row.get("subdomain", "-") or "-")
+    with c4:
+        domain_card("TLD", row.get("tld", "-") or "-")
+
+
+
+
+
 def main():
     apply_custom_css()
     st.markdown('<div class="hero-box"><h1>🛡️ PhishGuard: Phishing Detection Decision Support System</h1></div>', unsafe_allow_html=True)
@@ -716,6 +912,8 @@ def main():
 
     if single_row is not None:
         show_single_result(single_row)
+        
+        
 
     if result_df is not None:
         result_df = add_readable_labels(result_df)
