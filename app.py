@@ -862,7 +862,7 @@ def main():
         st.error(f"Failed to load model files: {e}")
         st.stop()
 
-    st.markdown("## URL Analysis")
+    # st.markdown("## URL Analysis")
 
     col_input, col_mode = st.columns([3, 1])
     with col_input:
