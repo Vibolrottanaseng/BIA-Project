@@ -40,27 +40,30 @@ def shannon_entropy(text: str) -> float:
 
 def extract_domain_parts(netloc: str):
     """
-    Very simple domain split without external dependencies.
     Returns:
-        subdomain_count, domain_name, tld
+        subdomain_count, subdomain, domain_name, root_domain, tld
     """
     if not netloc:
-        return 0, "", ""
+        return 0, "", "", "", ""
 
-    # Remove port if present
     host = netloc.split(":")[0].lower()
-
     parts = host.split(".")
+
     if len(parts) >= 2:
         tld = parts[-1]
         domain_name = parts[-2]
-        subdomain_count = max(0, len(parts) - 2)
+        subdomain_parts = parts[:-2]
+        subdomain = ".".join(subdomain_parts) if subdomain_parts else ""
+        root_domain = f"{domain_name}.{tld}"
+        subdomain_count = len(subdomain_parts)
     else:
         tld = ""
         domain_name = host
+        subdomain = ""
+        root_domain = host
         subdomain_count = 0
 
-    return subdomain_count, domain_name, tld
+    return subdomain_count, subdomain, domain_name, root_domain, tld
 
 
 def has_ip_address(host: str) -> int:
@@ -94,7 +97,8 @@ def extract_url_features(url: str) -> dict:
     path = parsed.path or ""
     query = parsed.query or ""
 
-    subdomain_count, domain_name, tld = extract_domain_parts(host)
+
+    subdomain_count, subdomain, domain_name, root_domain, tld = extract_domain_parts(host)
 
     num_digits = sum(char.isdigit() for char in full_url)
     url_length = len(full_url)
@@ -103,24 +107,29 @@ def extract_url_features(url: str) -> dict:
     token_count = len([tok for tok in re.split(r"[^A-Za-z0-9]+", full_url) if tok])
     query_param_count = len(parse_qs(query)) if query else 0
 
+
     features = {
-        "URL": original_url,
-        "url_length": url_length,
-        "has_ip_address": has_ip_address(host),
-        "dot_count": full_url.count("."),
-        "https_flag": int(parsed.scheme.lower() == "https"),
-        "url_entropy": shannon_entropy(full_url),
-        "token_count": token_count,
-        "subdomain_count": subdomain_count,
-        "query_param_count": query_param_count,
-        "tld_length": len(tld),
-        "path_length": len(path),
-        "has_hyphen_in_domain": int("-" in domain_name),
-        "number_of_digits": num_digits,
-        "suspicious_file_extension": has_suspicious_extension(path),
-        "domain_name_length": len(domain_name),
-        "percentage_numeric_chars": numeric_ratio,
-    }
+    "URL": original_url,
+    "host": host,
+    "subdomain": subdomain,
+    "root_domain": root_domain,
+    "tld": tld,
+    "url_length": url_length,
+    "has_ip_address": has_ip_address(host),
+    "dot_count": full_url.count("."),
+    "https_flag": int(parsed.scheme.lower() == "https"),
+    "url_entropy": shannon_entropy(full_url),
+    "token_count": token_count,
+    "subdomain_count": subdomain_count,
+    "query_param_count": query_param_count,
+    "tld_length": len(tld),
+    "path_length": len(path),
+    "has_hyphen_in_domain": int("-" in domain_name),
+    "number_of_digits": num_digits,
+    "suspicious_file_extension": has_suspicious_extension(path),
+    "domain_name_length": len(domain_name),
+    "percentage_numeric_chars": numeric_ratio,
+}
 
     return features
 

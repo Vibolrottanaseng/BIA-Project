@@ -77,6 +77,8 @@ def add_readable_labels(df):
 
 def predict_urls(urls, model, feature_columns):
     feature_df = extract_features_from_list(urls)
+    # st.write(feature_df.columns.tolist())
+    # st.write(feature_df.head())
     # st.write("Extractor columns:", feature_df.columns.tolist())
     X = feature_df[feature_columns].copy()
 
@@ -147,6 +149,11 @@ def get_key_risk_factors(row):
 
 
 def show_single_result(row):
+    
+    
+    
+    
+    
     st.markdown("### Analysis Result")
 
     c1, c2, c3 = st.columns([1.4, 1.2, 1.2])
@@ -709,13 +716,6 @@ def main():
 
     if single_row is not None:
         show_single_result(single_row)
-
-        st.markdown("### Detailed Feature View")
-        feature_view = pd.DataFrame({
-            "Feature": FEATURE_COLUMNS,
-            "Value": [single_row[col] for col in FEATURE_COLUMNS]
-        })
-        st.dataframe(feature_view, use_container_width=True, height=380)
 
     if result_df is not None:
         result_df = add_readable_labels(result_df)
