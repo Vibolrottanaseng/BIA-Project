@@ -77,6 +77,7 @@ def add_readable_labels(df):
 
 def predict_urls(urls, model, feature_columns):
     feature_df = extract_features_from_list(urls)
+    # st.write("Extractor columns:", feature_df.columns.tolist())
     X = feature_df[feature_columns].copy()
 
     preds = model.predict(X)
@@ -114,7 +115,7 @@ def gauge_chart(prob):
         height=280,
         margin=dict(l=10, r=10, t=60, b=10),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Risk Score chart")
 
 
 def get_key_risk_factors(row):
@@ -194,10 +195,10 @@ def show_single_result(row):
 
     st.markdown("### Domain Information")
     d1, d2, d3, d4 = st.columns(4)
-    d1.metric("Host", row["host"] if row["host"] else "-")
-    d2.metric("Root Domain", row["root_domain"] if row["root_domain"] else "-")
-    d3.metric("Subdomain", row["subdomain"] if row["subdomain"] else "-")
-    d4.metric("TLD", row["tld"] if row["tld"] else "-")
+    d1.metric("Host", row.get("host", "-") or "-")
+    d2.metric("Root Domain", row.get("root_domain", "-") or "-")
+    d3.metric("Subdomain", row.get("subdomain", "-") or "-")
+    d4.metric("TLD", row.get("tld", "-") or "-")
 
 
 def show_kpis(df):
@@ -238,7 +239,7 @@ def plot_prediction_pie(df):
         hole=0.35
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=50, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Phishing vs Legitimate URLs chart")
 
 
 def plot_feature_importance(model, feature_columns):
@@ -282,7 +283,7 @@ def plot_feature_importance(model, feature_columns):
         margin=dict(l=10, r=10, t=50, b=10),
         yaxis={"categoryorder": "total ascending"}
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Feature Importance chart")
 
 def plot_financial_sector_targeting(df):
     target_keywords = {
@@ -315,13 +316,20 @@ def plot_financial_sector_targeting(df):
         chart_df,
         x="Category",
         y="Count",
-        title="Financial Sector Targeting"
+        title="Financial Sector Targeting",
+        text="Count"
     )
+    fig.update_traces(textposition="outside")
     fig.update_layout(
         height=320,
-        margin=dict(l=10, r=10, t=50, b=10)
+        margin=dict(l=10, r=10, t=50, b=10),
+        xaxis_title="",
+        yaxis_title="Frequency"
     )
-    st.plotly_chart(fig, use_container_width=True)
+
+    st.plotly_chart(fig, width="stretch", key="financial_sector_targeting_chart")
+
+
 def plot_top_threat_tlds(df, top_n=5):
     if "tld" not in df.columns:
         st.info("TLD data not available.")
@@ -355,7 +363,7 @@ def plot_top_threat_tlds(df, top_n=5):
         margin=dict(l=10, r=10, t=50, b=10),
         yaxis={"categoryorder": "total ascending"}
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Top Threat TLDs chart")
 
 
 def extract_keyword_counts(urls):
@@ -384,7 +392,7 @@ def plot_keyword_chart(df):
         title="Credential Harvesting Keywords"
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=50, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Credential Harvesting Keywords chart")
 
 
 def plot_suspicious_patterns(df):
@@ -403,7 +411,7 @@ def plot_suspicious_patterns(df):
         title="Suspicious URL Patterns"
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=50, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Suspicious URL Patterns chart")
 
 
 def plot_probability_distribution(df):
@@ -418,7 +426,7 @@ def plot_probability_distribution(df):
         title="Phishing Probability Distribution"
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=50, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Phishing Probability Distribution chart")
 
 
 def plot_top_domains(df, top_n=8):
@@ -439,7 +447,7 @@ def plot_top_domains(df, top_n=8):
         title="Top Source Domains"
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=50, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Top Source Domains chart")
 
 def plot_phishing_url_patterns(df):
     phishing_df = df[df["prediction"] == 1].copy()
@@ -474,18 +482,110 @@ def plot_phishing_url_patterns(df):
         xaxis_title="",
         yaxis_title="Count"
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Phishing URL Patterns chart")
+
+def plot_suspicious_keyword_frequency(df):
+    phishing_df = df[df["prediction"] == 1].copy()
+
+    if phishing_df.empty:
+        st.info("No phishing URLs detected, so no suspicious keyword frequency chart is available.")
+        return
+
+    suspicious_keywords = {
+        "Login": ["login", "signin", "sign-in"],
+        "Verify": ["verify", "verification", "confirm"],
+        "Account": ["account", "profile"],
+        "Secure": ["secure", "security", "safe"],
+        "Update": ["update", "updated"],
+        "Bank": ["bank", "banking"],
+        "Payment": ["payment", "pay", "billing", "invoice"],
+        "Password": ["password", "passwd"],
+        "Wallet": ["wallet", "card", "credit", "debit"],
+        "Alert": ["alert", "warning", "notice"],
+    }
+
+    url_series = phishing_df["URL"].fillna("").astype(str).str.lower()
+
+    rows = []
+    for label, keywords in suspicious_keywords.items():
+        count = 0
+        for url in url_series:
+            if any(keyword in url for keyword in keywords):
+                count += 1
+        rows.append({"Keyword": label, "Count": count})
+
+    chart_df = pd.DataFrame(rows)
+    chart_df = chart_df[chart_df["Count"] > 0].sort_values("Count", ascending=False)
+
+    if chart_df.empty:
+        st.info("No strong phishing-related keywords were found in the current phishing URLs.")
+        return
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=chart_df["Keyword"],
+        y=chart_df["Count"],
+        text=chart_df["Count"],
+        textposition="outside",
+        marker=dict(
+            color="#e74c3c",
+            line=dict(color="#c0392b", width=1.5)
+        ),
+        hovertemplate="<b>%{x}</b><br>Count: %{y}<extra></extra>"
+    ))
+
+    fig.update_layout(
+        title={
+            "text": "Credential Harvesting Keywords",
+            "x": 0.02,
+            "xanchor": "left",
+            "font": {"size": 18, "color": "#163a63"}
+        },
+        height=320,
+        margin=dict(l=20, r=20, t=55, b=20),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        showlegend=False,
+        xaxis=dict(
+            title="",
+            tickfont=dict(size=13, color="#163a63"),
+            showgrid=False,
+            showline=True,
+            linecolor="#6b7f99",
+            linewidth=2
+        ),
+        yaxis=dict(
+            title="Count",
+            tickfont=dict(size=12, color="#163a63"),
+            showgrid=True,
+            gridcolor="#d9e2ec",
+            griddash="dot",
+            zeroline=False,
+            showline=True,
+            linecolor="#6b7f99",
+            linewidth=2
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True, key="suspicious_keyword_frequency_chart")
 
 def results_table(df):
     st.markdown("### Prediction Results")
-    display_cols = [
+
+    preferred_cols = [
         "URL", "host", "root_domain", "subdomain", "tld",
         "prediction_label", "phishing_probability", "risk_level",
         "url_length", "https_flag", "subdomain_count",
         "number_of_digits", "url_entropy"
     ]
-    st.dataframe(df[display_cols], use_container_width=True, height=320)
 
+    available_cols = [col for col in preferred_cols if col in df.columns]
+
+    if not available_cols:
+        st.warning("No display columns are available in the prediction results.")
+        return
+
+    st.dataframe(df[available_cols], use_container_width=True, height=320)
 
 def make_download_csv(df):
     return df.to_csv(index=False).encode("utf-8")
@@ -632,20 +732,17 @@ def main():
             with r1c3:
                 plot_financial_sector_targeting(result_df)
 
-            r2c1, r2c2, r2c3 = st.columns(3)
+            r2c1, r2c2 = st.columns(2)
             with r2c1:
-                plot_top_threat_tlds(result_df)
+                plot_suspicious_keyword_frequency(result_df)
             with r2c2:
-                plot_keyword_chart(result_df)
-            with r2c3:
-                plot_suspicious_patterns(result_df)
-
-            r3c1, r3c2 = st.columns(2)
-            with r3c1:
-                    plot_phishing_url_patterns(result_df)
-            with r3c2:
-                results_table(result_df)
-
+                plot_phishing_url_patterns(result_df)
+          
+            
+            results_table(result_df)
+            
+            
+                
             st.download_button(
                 label="Download Results CSV",
                 data=make_download_csv(result_df),
@@ -655,4 +752,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()  
