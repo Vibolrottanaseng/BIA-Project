@@ -651,7 +651,7 @@ def apply_custom_css():
 
 def main():
     apply_custom_css()
-    st.markdown('<div class="hero-box"><h1>🛡️ Phishing URL Decision Support System</h1></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-box"><h1>🛡️ PhishGuard: Phishing Detection Decision Support System</h1></div>', unsafe_allow_html=True)
 
     try:
         model, feature_columns = load_model()
