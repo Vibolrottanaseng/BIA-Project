@@ -419,19 +419,23 @@ def plot_financial_sector_targeting(df):
         return
 
     fig = px.bar(
-        chart_df,
-        x="Category",
-        y="Count",
-        title="Financial Sector Targeting",
-        text="Count"
+    chart_df,
+    x="Category",
+    y="Count",
+    title="Financial Sector Targeting",
+    text="Count",
+    color="Category",
+    color_discrete_sequence=["#8b5cf6", "#6366f1", "#3b82f6", "#a855f7", "#4f46e5", "#2563eb", "#7c3aed"]
     )
+
     fig.update_traces(textposition="outside")
     fig.update_layout(
-        height=320,
-        margin=dict(l=10, r=10, t=50, b=10),
-        xaxis_title="",
-        yaxis_title="Frequency"
-    )
+    height=320,
+    margin=dict(l=10, r=10, t=50, b=10),
+    xaxis_title="",
+    yaxis_title="Frequency",
+    showlegend=False
+)
 
     st.plotly_chart(fig, width="stretch", key="financial_sector_targeting_chart")
 
